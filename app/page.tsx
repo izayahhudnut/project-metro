@@ -1,103 +1,396 @@
+'use client'
+
 import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState, useEffect } from "react";
+import { ArrowDown, Users, Eye, MousePointer, DollarSign, TrendingUp } from "lucide-react";
+import { ShootingStars } from "@/components/ui/shooting-stars";
+import { StarsBackground } from "@/components/ui/stars-background";
 
-export default function Home() {
+// No fallback data
+
+
+
+
+
+interface UsageData {
+  email: string;
+  cost: number;
+}
+
+interface AnalyticsData {
+  metric: string;
+  value: number;
+  change: number;
+  icon: any;
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: UsageData[];
+  total?: number;
+  error?: string;
+}
+
+interface RevenueData {
+  arr: number;
+  totalMoneyMade: number;
+}
+
+interface RevenueApiResponse {
+  success: boolean;
+  data: RevenueData;
+  error?: string;
+}
+
+interface RegionData {
+  region: string;
+  country: string;
+  flag: string;
+  visitors: number;
+  views: number;
+}
+
+interface AnalyticsApiResponse {
+  success: boolean;
+  data: AnalyticsData[];
+  regions?: RegionData[];
+  error?: string;
+}
+
+export default function Dashboard() {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  const [llmCostData, setLlmCostData] = useState<UsageData[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
+  const [regionData, setRegionData] = useState<RegionData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [revenueLoading, setRevenueLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [revenueError, setRevenueError] = useState<string | null>(null);
+  const [revenueData, setRevenueData] = useState<RevenueData>({ arr: 0, totalMoneyMade: 0 });
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+
+  
+
+  // Fetch usage data from API
+  useEffect(() => {
+    const fetchUsageData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch('/api/usage');
+        const result: ApiResponse = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          setLlmCostData(result.data);
+        } else if (result.error) {
+          console.warn('API returned error:', result.error);
+          setError(result.error);
+        }
+      } catch (err) {
+        console.error('Failed to fetch usage data:', err);
+        setError('Failed to fetch data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsageData();
+    
+    // Refresh data every hour
+    const interval = setInterval(fetchUsageData, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch analytics data from API
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      setAnalyticsLoading(true);
+      setAnalyticsError(null);
+      
+      try {
+        const response = await fetch('/api/analytics');
+        const result: AnalyticsApiResponse = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          // Map icon strings to actual components  
+          const mappedData = result.data.map(item => ({
+            ...item,
+            icon: item.icon === 'Users' ? Users : item.icon === 'UserCheck' ? Users : MousePointer
+          }));
+          setAnalyticsData(mappedData);
+          
+          // Set region data if available
+          if (result.regions) {
+            setRegionData(result.regions);
+          }
+        } else if (result.error) {
+          console.warn('Analytics API returned error:', result.error);
+          setAnalyticsError(result.error);
+        }
+      } catch (err) {
+        console.error('Failed to fetch analytics data:', err);
+        setAnalyticsError('Failed to fetch analytics');
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+    
+    // Refresh data every hour
+    const interval = setInterval(fetchAnalyticsData, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch revenue data from API
+  useEffect(() => {
+    const fetchRevenueData = async () => {
+      setRevenueLoading(true);
+      setRevenueError(null);
+      
+      try {
+        const response = await fetch('/api/revenue');
+        const result: RevenueApiResponse = await response.json();
+        
+        if (result.success) {
+          setRevenueData(result.data);
+        } else if (result.error) {
+          console.warn('Revenue API returned error:', result.error);
+          setRevenueError(result.error);
+        }
+      } catch (err) {
+        console.error('Failed to fetch revenue data:', err);
+        setRevenueError('Failed to fetch revenue');
+      } finally {
+        setRevenueLoading(false);
+      }
+    };
+
+    fetchRevenueData();
+    
+    // Refresh data every 5 minutes
+    const interval = setInterval(fetchRevenueData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const totalLLMCost = llmCostData.reduce((sum, user) => sum + user.cost, 0);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-neutral-900 text-white flex flex-col relative overflow-hidden">
+      <ShootingStars />
+      <StarsBackground />
+      
+      {/* Header */}
+      <div className="relative z-10 flex items-center justify-between p-4 backdrop-blur-sm bg-gradient-to-b from-black/30 via-black/20 to-transparent">
+        <div className="flex items-center space-x-4">
+          <Image
+            src="/light-logo.png"
+            alt="OpsCompanion Logo"
+            width={60}
+            height={15}
+            style={{ height: "auto", width: "auto" }}
+            className="h-4 filter brightness-0 invert"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="text-right">
+          <div className="text-3xl font-mono font-bold text-white">
+            {isMounted ? currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}
+          </div>
+          <div className="text-sm text-gray-400">
+            {isMounted ? currentTime.toLocaleDateString() : '--/--/--'}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 flex-1 p-4 pb-20 grid grid-cols-1 gap-4">
+        {/* Left Section - Usage Stats */}
+        <div className="col-span-1 space-y-4">
+          <div>
+            <h2 className="text-lg font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white/60 via-white to-white/60">USAGE</h2>
+            <Card className="backdrop-blur-md bg-white/10 border-white/6 shadow-xl h-full">
+              <CardHeader>
+                <CardTitle className="bg-clip-text text-transparent bg-gradient-to-r from-white/80 via-white to-white/80 flex items-center gap-2">
+                  LLM Cost per User (All Time)
+                  {isLoading && (
+                    <div className="w-4 h-4 border-2 border-white/6 border-t-white rounded-full animate-spin"></div>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {error && (
+                  <div className="text-xs text-yellow-400 mb-3 p-2 bg-yellow-400/10 rounded border border-yellow-400/20">
+                    Warning: Using fallback data ({error})
+                  </div>
+                )}
+                <div className="space-y-3">
+                  {isLoading ? (
+                    // Skeleton loading
+                    <>
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <div className="w-32 h-4 bg-gray-600 rounded animate-pulse"></div>
+                          <div className="w-16 h-4 bg-gray-600 rounded animate-pulse"></div>
+                        </div>
+                      ))}
+                      <div className="border-t border-white/6 pt-3 mt-3">
+                        <div className="flex justify-between items-center">
+                          <div className="w-12 h-4 bg-gray-600 rounded animate-pulse"></div>
+                          <div className="w-20 h-6 bg-gray-600 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                    </>
+                  ) : llmCostData.length > 0 ? (
+                    <>
+                      {llmCostData.map((user, index) => (
+                        <div key={`${user.email}-${index}`} className="flex justify-between items-center">
+                          <span className="text-sm text-gray-300">{user.email}</span>
+                          <span className="font-mono font-semibold text-white">
+                            ${user.cost.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="border-t border-white/6 pt-3 mt-3">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-white">Total</span>
+                          <span className="font-mono font-bold text-lg text-white">
+                            ${totalLLMCost.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-gray-400 text-sm">No LLM usage data available</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Web Analytics */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {analyticsLoading ? (
+                // Skeleton loading cards
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index} className="backdrop-blur-md bg-white/10 border-white/6 shadow-xl">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                        <div className="w-4 h-4 bg-gray-600 rounded animate-pulse"></div>
+                        <div className="w-20 h-4 bg-gray-600 rounded animate-pulse"></div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="w-16 h-8 bg-gray-600 rounded animate-pulse"></div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : analyticsData.length > 0 ? (
+                analyticsData.map((item) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <Card key={item.metric} className="backdrop-blur-md bg-white/10 border-white/6 shadow-xl">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                          <IconComponent className="w-4 h-4" />
+                          {item.metric}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-white">
+                          {item.value.toLocaleString()}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                // Always show the 3 card structure even when no data
+                ['Weekly Active Users', 'Total Users', 'Website Visitors (30 days)'].map((metric, index) => (
+                  <Card key={metric} className="backdrop-blur-md bg-white/10 border-white/6 shadow-xl">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                        {index === 0 ? <Users className="w-4 h-4" /> : index === 1 ? <Eye className="w-4 h-4" /> : <MousePointer className="w-4 h-4" />}
+                        {metric}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-500">--</div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Revenue Section */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white/60 via-white to-white/60">REVENUE</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="backdrop-blur-md bg-white/10 border-white/6 shadow-xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    ARR
+                    {revenueLoading && (
+                      <div className="w-3 h-3 border border-white/6 border-t-white rounded-full animate-spin"></div>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {revenueLoading ? (
+                    <div className="w-20 h-8 bg-gray-600 rounded animate-pulse"></div>
+                  ) : (
+                    <div className="text-2xl font-bold text-white">
+                      ${revenueData.arr > 0 ? revenueData.arr.toLocaleString() : '--'}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="backdrop-blur-md bg-white/10 border-white/6 shadow-xl">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    Total Revenue
+                    {revenueLoading && (
+                      <div className="w-3 h-3 border border-white/6 border-t-white rounded-full animate-spin"></div>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {revenueLoading ? (
+                    <div className="w-20 h-8 bg-gray-600 rounded animate-pulse"></div>
+                  ) : (
+                    <div className="text-2xl font-bold text-white">
+                      ${revenueData.totalMoneyMade > 0 ? revenueData.totalMoneyMade.toLocaleString() : '--'}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        
+      </div>
+
+      
     </div>
   );
 }

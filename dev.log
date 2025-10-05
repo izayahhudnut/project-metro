@@ -1,0 +1,17 @@
+
+> ops-os@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use by process 3723, using available port 3002 instead.
+   ▲ Next.js 15.5.4
+   - Local:        http://localhost:3002
+   - Network:      http://10.40.46.227:3002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1385ms
+   Reload env: .env.local
+   Reload env: .env.local
+   Reload env: .env.local
+   Reload env: .env.local
+   Reload env: .env.local
