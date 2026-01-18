@@ -73,6 +73,8 @@ export default function Dashboard() {
     };
 
     fetchTotalUsers();
+    const interval = setInterval(fetchTotalUsers, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -99,6 +101,8 @@ export default function Dashboard() {
     };
 
     fetchMonthUsers();
+    const interval = setInterval(fetchMonthUsers, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -115,6 +119,8 @@ export default function Dashboard() {
     };
 
     fetchArr();
+    const interval = setInterval(fetchArr, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
   useEffect(() => {
     const fetchRecentUsers = async () => {
@@ -130,6 +136,8 @@ export default function Dashboard() {
     };
 
     fetchRecentUsers();
+    const interval = setInterval(fetchRecentUsers, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
   useEffect(() => {
     const fetchMonthVisitors = async () => {
@@ -145,6 +153,8 @@ export default function Dashboard() {
     };
 
     fetchMonthVisitors();
+    const interval = setInterval(fetchMonthVisitors, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -184,6 +194,8 @@ export default function Dashboard() {
     };
 
     fetchMonthRegions();
+    const interval = setInterval(fetchMonthRegions, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
   useEffect(() => {
     const fetchCalendarEvents = async () => {
@@ -261,6 +273,8 @@ export default function Dashboard() {
     };
 
     fetchCalendarEvents();
+    const interval = setInterval(fetchCalendarEvents, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
   useEffect(() => {
     const fetchSessionsPerUser = async () => {
@@ -276,6 +290,8 @@ export default function Dashboard() {
     };
 
     fetchSessionsPerUser();
+    const interval = setInterval(fetchSessionsPerUser, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const revenueData: RevenueData = {
