@@ -121,3 +121,6 @@
   }
 }
 
+.font-title {
+  font-family: var(--font-playfair);
+}
