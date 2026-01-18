@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getGoogleOAuthClient } from "@/lib/google";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const client = getGoogleOAuthClient();
   const url = client.generateAuthUrl({
