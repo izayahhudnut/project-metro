@@ -16,7 +16,8 @@ export async function GET(request: Request) {
   const client = getGoogleOAuthClient();
   const { tokens } = await client.getToken(code);
 
-  cookies().set("google_tokens", JSON.stringify(tokens), {
+  const cookieStore = await cookies();
+  cookieStore.set("google_tokens", JSON.stringify(tokens), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

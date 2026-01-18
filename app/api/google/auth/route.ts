@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGoogleOAuthClient } from "@/lib/google";
 
-export async function GET(request: Request) {
+export async function GET() {
   const client = getGoogleOAuthClient();
   const url = client.generateAuthUrl({
     access_type: "offline",

@@ -15,7 +15,8 @@ const getWeekRange = () => {
 };
 
 export async function GET() {
-  const tokenCookie = cookies().get("google_tokens")?.value;
+  const cookieStore = await cookies();
+  const tokenCookie = cookieStore.get("google_tokens")?.value;
   if (!tokenCookie) {
     return NextResponse.json(
       { success: false, error: "Not connected" },
@@ -60,7 +61,10 @@ export async function GET() {
           [],
       })) ?? []
     );
-  });
+  }).filter(
+    (event) =>
+      !event.title.toLowerCase().startsWith("working location")
+  );
 
   return NextResponse.json({ success: true, events });
 }

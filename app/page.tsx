@@ -3,7 +3,9 @@
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useMemo } from "react";
-import { Users, UserRound, TrendingUp, UserPlus } from "lucide-react";
+import type { COBEOptions } from "cobe";
+import type { ElementType } from "react";
+import { Users, UserRound, TrendingUp } from "lucide-react";
 import { ShootingStars } from "@/components/ui/shooting-stars";
 import { Globe } from "@/components/ui/globe";
 
@@ -22,12 +24,7 @@ interface AnalyticsData {
   metric: string;
   value: number | null;
   change: number | null;
-  icon: any;
-}
-
-interface RevenueData {
-  arr: number;
-  totalMoneyMade: number;
+  icon: ElementType;
 }
 
 interface CalendarEvent {
@@ -38,6 +35,7 @@ interface CalendarEvent {
   end: string;
   calendar?: string;
   attendees?: string[];
+  allDay?: boolean;
 }
 
 export default function Dashboard() {
@@ -53,7 +51,24 @@ export default function Dashboard() {
   >([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
-  const globeConfig = useMemo(
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const calendarStart = 8 * 60;
+  const calendarEnd = 22 * 60;
+  const calendarRowHeight = 32;
+  const toMinutes = (time: string) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+  const timeSlots = Array.from(
+    { length: (calendarEnd - calendarStart) / 60 },
+    (_, index) => {
+      const hour = (calendarStart / 60 + index) % 24;
+      const labelHour = hour % 12 || 12;
+      const suffix = hour >= 12 ? "PM" : "AM";
+      return `${labelHour} ${suffix}`;
+    }
+  );
+  const globeConfig = useMemo<Partial<COBEOptions>>(
     () => ({
       markers: regionMarkers.length > 0 ? regionMarkers : undefined,
     }),
@@ -221,6 +236,7 @@ export default function Dashboard() {
               if (!startDate || !endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
                 return null;
               }
+              const allDay = !event.start.includes("T") || !event.end.includes("T");
               const day = startDate.getDay();
               const start = to24(startDate);
               const end = to24(endDate);
@@ -232,10 +248,14 @@ export default function Dashboard() {
                 end,
                 calendar: event.calendar,
                 attendees: event.attendees ?? [],
+                allDay,
               };
             })
             .filter(Boolean)
             .map((event: CalendarEvent) => {
+              if (event.allDay) {
+                return event;
+              }
               const startMin = clamp(toMinutes(event.start));
               const endMin = clamp(toMinutes(event.end));
               const endAdjusted = endMin > startMin ? endMin : Math.min(endMinutes, startMin + 30);
@@ -275,7 +295,7 @@ export default function Dashboard() {
     fetchCalendarEvents();
     const interval = setInterval(fetchCalendarEvents, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [calendarEnd, calendarStart]);
   useEffect(() => {
     const fetchSessionsPerUser = async () => {
       try {
@@ -294,27 +314,6 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const revenueData: RevenueData = {
-    arr: arr ?? 0,
-    totalMoneyMade: 4623000,
-  };
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const calendarStart = 8 * 60;
-  const calendarEnd = 22 * 60;
-  const calendarRowHeight = 32;
-  const timeSlots = Array.from(
-    { length: (calendarEnd - calendarStart) / 60 },
-    (_, index) => {
-      const hour = (calendarStart / 60 + index) % 24;
-      const labelHour = hour % 12 || 12;
-      const suffix = hour >= 12 ? "PM" : "AM";
-      return `${labelHour} ${suffix}`;
-    }
-  );
-  const toMinutes = (time: string) => {
-    const [hours, minutes] = time.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
   const calendarLayout = useMemo(() => {
     const byDay: Array<
       Array<
@@ -329,45 +328,44 @@ export default function Dashboard() {
 
     for (let day = 0; day < 7; day += 1) {
       const dayEvents = calendarEvents
-        .filter((event) => event.day === day)
+        .filter((event) => event.day === day && !event.allDay)
         .map((event, idx) => ({
           ...event,
           idx,
           startMin: toMinutes(event.start),
           endMin: toMinutes(event.end),
+          key: event.id ?? `${event.title}-${event.start}-${event.end}-${idx}`,
         }))
         .sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
 
-      let groupId = 0;
-      const groupMax: Record<number, number> = {};
-      const active: Array<{ endMin: number; group: number; col: number }> = [];
-      const meta: Record<number, { group: number; col: number }> = {};
-
       for (const event of dayEvents) {
-        for (let i = active.length - 1; i >= 0; i -= 1) {
-          if (active[i].endMin <= event.startMin) {
-            active.splice(i, 1);
+        const overlaps = dayEvents.filter(
+          (other) => other.startMin < event.endMin && other.endMin > event.startMin
+        );
+        const timePoints = overlaps
+          .flatMap((other) => [other.startMin, other.endMin])
+          .filter((t) => t >= event.startMin && t <= event.endMin)
+          .sort((a, b) => a - b);
+
+        let maxOverlap = 1;
+        let peakSet: typeof overlaps = overlaps;
+        for (let i = 0; i < timePoints.length - 1; i += 1) {
+          const mid = (timePoints[i] + timePoints[i + 1]) / 2;
+          const concurrent = overlaps.filter(
+            (other) => other.startMin <= mid && other.endMin > mid
+          );
+          if (concurrent.length > maxOverlap) {
+            maxOverlap = concurrent.length;
+            peakSet = concurrent;
           }
         }
 
-        const group = active.length > 0 ? active[0].group : groupId++;
-        const usedCols = new Set(active.map((item) => item.col));
-        let col = 0;
-        while (usedCols.has(col)) col += 1;
-
-        active.push({ endMin: event.endMin, group, col });
-        meta[event.idx] = { group, col };
-        groupMax[group] = Math.max(
-          groupMax[group] ?? 0,
-          active.filter((item) => item.group === group).length
+        const ordered = peakSet.sort(
+          (a, b) => a.startMin - b.startMin || a.endMin - b.endMin || a.key.localeCompare(b.key)
         );
-      }
-
-      for (const event of dayEvents) {
-        const info = meta[event.idx];
-        const cols = groupMax[info.group] ?? 1;
-        const widthPct = 100 / cols;
-        const leftPct = info.col * widthPct;
+        const index = ordered.findIndex((item) => item.key === event.key);
+        const widthPct = 100 / maxOverlap;
+        const leftPct = Math.max(0, index) * widthPct;
         const top = ((event.startMin - calendarStart) / 60) * calendarRowHeight;
         const height = ((event.endMin - event.startMin) / 60) * calendarRowHeight;
         byDay[day].push({
@@ -527,7 +525,7 @@ export default function Dashboard() {
               <div className="relative overflow-hidden rounded-xl bg-transparent min-h-[420px]">
                 <div className="absolute left-4 top-4 z-10">
                   <div className="text-base uppercase tracking-wide text-gray-300 font-title">
-                    This Month's Website Visitors
+                    This Month&apos;s Website Visitors
                   </div>
                   {monthVisitors === null ? (
                     <div className="mt-2 h-10 w-32 rounded bg-white/10 animate-pulse" />
@@ -584,7 +582,7 @@ export default function Dashboard() {
                 style={{ height: `${timeSlots.length * calendarRowHeight}px` }}
               >
                 <div className="grid grid-cols-[80px_repeat(7,1fr)]">
-                  {timeSlots.map((slot, rowIndex) => (
+                  {timeSlots.map((slot) => (
                     <div key={slot} className="contents">
                       <div className="text-xs text-gray-400 pr-2 pt-2">
                         {slot}
@@ -592,7 +590,7 @@ export default function Dashboard() {
                       {weekDays.map((day) => (
                         <div
                           key={`${day}-${slot}`}
-                          className="border-t border-white/10"
+                          className="border-t border-r border-white/10"
                           style={{ height: `${calendarRowHeight}px` }}
                         />
                       ))}
@@ -610,8 +608,8 @@ export default function Dashboard() {
                           style={{
                             top: `${event.top}px`,
                             height: `${event.height}px`,
-                            left: `${event.leftPct}%`,
-                            width: `${event.widthPct}%`,
+                            left: `calc(${event.leftPct}% + 3px)`,
+                            width: `calc(${event.widthPct}% - 6px)`,
                           }}
                         >
                           <div className="font-semibold truncate">
