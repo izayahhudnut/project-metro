@@ -403,7 +403,16 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-4 items-stretch">
           <Card className="backdrop-blur-md bg-white/10 border-white/6 shadow-xl">
             <CardContent className="pt-6 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-stretch">
-              <div className="flex flex-col justify-between gap-6 px-4 lg:px-8 min-h-[420px] pt-4">
+              <div className="flex flex-col justify-between gap-6 px-4 lg:px-8 min-h-[420px] pt-2">
+                <div className="flex items-center -mt-7">
+                  <Image
+                    src="/light-logo.png"
+                    alt="OpsCompanion logo"
+                    width={44}
+                    height={11}
+                    priority
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {topMetrics.length > 0 ? (
                     topMetrics.map((item) => {
