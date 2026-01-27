@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useMemo } from "react";
 import type { COBEOptions } from "cobe";
 import type { ElementType } from "react";
-import { Users, UserRound, TrendingUp } from "lucide-react";
+import { Users, UserRound, TrendingUp, Siren, HeartPulse, Gavel, Newspaper } from "lucide-react";
 import { ShootingStars } from "@/components/ui/shooting-stars";
 import { Globe } from "@/components/ui/globe";
 
@@ -388,6 +388,25 @@ export default function Dashboard() {
 
   const sessionsData = sessionsPerUser ?? [];
 
+  const stlNews = [
+    {
+      icon: Siren,
+      text: "Breaking: South St. Louis restaurant shooting leaves one dead; homicide detectives are investigating.",
+    },
+    {
+      icon: HeartPulse,
+      text: "Sports desk: Former Blues coach Craig Berube is recovering after a gym accident caused a head injury.",
+    },
+    {
+      icon: Gavel,
+      text: "Capitol watch: Missouri attorney general faces a malpractice suit tied to pre-office fundraising advice.",
+    },
+    {
+      icon: Newspaper,
+      text: "KSDK watch: More local updates expected tonight as crews gather new details across the metro.",
+    },
+  ];
+
   return (
     <div
       className="h-screen bg-neutral-900 text-white flex flex-col relative overflow-hidden bg-no-repeat bg-cover bg-center"
@@ -657,7 +676,19 @@ export default function Dashboard() {
 
       <div className="fixed bottom-0 left-0 right-0 z-20 bg-black/70 border-t border-white/10 metro-marquee">
         <div className="metro-marquee__inner py-1 text-xs tracking-wide uppercase text-gray-200">
-          Aggripa Creative X Under Construction
+          <span className="inline-flex items-center gap-2 mr-8 text-amber-300">
+            <Newspaper className="w-4 h-4" />
+            STL Newswire
+          </span>
+          {stlNews.map((story, index) => {
+            const Icon = story.icon;
+            return (
+              <span key={`${story.text}-${index}`} className="inline-flex items-center gap-2 mr-10">
+                <Icon className="w-4 h-4 text-amber-300" />
+                <span className="text-gray-200">{story.text}</span>
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>
