@@ -655,10 +655,10 @@ export default function Dashboard() {
 
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 bg-black/70 border-t border-white/10">
-        <marquee className="py-1 text-xs tracking-wide uppercase text-gray-200" scrollamount={4}>
+      <div className="fixed bottom-0 left-0 right-0 z-20 bg-black/70 border-t border-white/10 metro-marquee">
+        <div className="metro-marquee__inner py-1 text-xs tracking-wide uppercase text-gray-200">
           Aggripa Creative X Under Construction
-        </marquee>
+        </div>
       </div>
     </div>
   );
