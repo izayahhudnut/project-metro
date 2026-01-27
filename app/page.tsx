@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { COBEOptions } from "cobe";
 import type { ElementType } from "react";
 import { Users, UserRound, TrendingUp, Siren, HeartPulse, Gavel, Newspaper } from "lucide-react";
+import stlNewsData from "./data/stl-news.json";
 import { ShootingStars } from "@/components/ui/shooting-stars";
 import { Globe } from "@/components/ui/globe";
 
@@ -388,24 +389,17 @@ export default function Dashboard() {
 
   const sessionsData = sessionsPerUser ?? [];
 
-  const stlNews = [
-    {
-      icon: Siren,
-      text: "Breaking: South St. Louis restaurant shooting leaves one dead; homicide detectives are investigating.",
-    },
-    {
-      icon: HeartPulse,
-      text: "Sports desk: Former Blues coach Craig Berube is recovering after a gym accident caused a head injury.",
-    },
-    {
-      icon: Gavel,
-      text: "Capitol watch: Missouri attorney general faces a malpractice suit tied to pre-office fundraising advice.",
-    },
-    {
-      icon: Newspaper,
-      text: "KSDK watch: More local updates expected tonight as crews gather new details across the metro.",
-    },
-  ];
+  const iconMap: Record<string, ElementType> = {
+    Siren,
+    HeartPulse,
+    Gavel,
+    Newspaper,
+  };
+
+  const stlNews = (stlNewsData ?? []).map((story) => ({
+    ...story,
+    icon: iconMap[story.icon] ?? Newspaper,
+  }));
 
   return (
     <div
